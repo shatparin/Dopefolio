@@ -1,0 +1,163 @@
+-- 🌈 Prem Hack GUI v3
+-- รองรับ JumpPower และ JumpHeight
+
+-- สร้าง GUI หลัก
+local gui = Instance.new("ScreenGui")
+local frame = Instance.new("Frame")
+local uistroke = Instance.new("UIStroke")
+local corner = Instance.new("UICorner")
+local title = Instance.new("TextLabel")
+local subtitle = Instance.new("TextLabel")
+local toggle = Instance.new("TextButton")
+local inputBox = Instance.new("TextBox")
+local valueLabel = Instance.new("TextLabel")
+
+-- Player setup
+local player = game.Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+-- GUI setup
+gui.Parent = game:GetService("CoreGui")
+gui.Name = "PremHackGUI"
+
+frame.Parent = gui
+frame.Size = UDim2.new(0, 280, 0, 220)
+frame.AnchorPoint = Vector2.new(0.5, 0)
+frame.Position = UDim2.new(0.5, 0, 0.05, 0)
+frame.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+-- 🌈 เส้นขอบสีรุ้ง
+uistroke.Parent = frame
+uistroke.Thickness = 3
+uistroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- มุมโค้ง
+corner.Parent = frame
+corner.CornerRadius = UDim.new(0, 20)
+
+-- 🌈 เคลื่อนไหวสีรุ้ง
+task.spawn(function()
+	local hue = 0
+	while task.wait(0.03) do
+		hue += 0.01
+		if hue > 1 then hue = 0 end
+		uistroke.Color = Color3.fromHSV(hue, 1, 1)
+	end
+end)
+
+-- ชื่อ GUI
+title.Parent = frame
+title.Size = UDim2.new(1, 0, 0, 40)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Text = "Prem Hack"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.TextScaled = true
+
+-- หัวข้อ Jump Hack
+subtitle.Parent = frame
+subtitle.Size = UDim2.new(1, 0, 0, 30)
+subtitle.Position = UDim2.new(0, 0, 0.25, 0)
+subtitle.BackgroundTransparency = 1
+subtitle.Font = Enum.Font.GothamSemibold
+subtitle.Text = "Jump Hack"
+subtitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+subtitle.TextScaled = true
+
+-- ปุ่มเปิดปิด
+toggle.Parent = frame
+toggle.Size = UDim2.new(0.5, 0, 0, 40)
+toggle.Position = UDim2.new(0.25, 0, 0.45, 0)
+toggle.Font = Enum.Font.GothamBold
+toggle.Text = "OFF"
+toggle.TextScaled = true
+toggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+toggle.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggle.BorderSizePixel = 0
+
+local toggleCorner = Instance.new("UICorner", toggle)
+toggleCorner.CornerRadius = UDim.new(0, 10)
+
+-- ช่องใส่ค่า
+inputBox.Parent = frame
+inputBox.Size = UDim2.new(0.6, 0, 0, 35)
+inputBox.Position = UDim2.new(0.2, 0, 0.7, 0)
+inputBox.PlaceholderText = "พิมพ์ค่าความสูง เช่น 120"
+inputBox.Font = Enum.Font.Gotham
+inputBox.TextScaled = true
+inputBox.Text = ""
+inputBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+inputBox.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+inputBox.BorderSizePixel = 0
+
+local inputCorner = Instance.new("UICorner", inputBox)
+inputCorner.CornerRadius = UDim.new(0, 8)
+
+-- แสดงค่าปัจจุบัน
+valueLabel.Parent = frame
+valueLabel.Size = UDim2.new(1, 0, 0, 30)
+valueLabel.Position = UDim2.new(0, 0, 0.87, 0)
+valueLabel.BackgroundTransparency = 1
+valueLabel.Font = Enum.Font.GothamMedium
+valueLabel.Text = "Jump: 50"
+valueLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+valueLabel.TextScaled = true
+
+-- 🦘 Logic การทำงาน
+local enabled = false
+local jumpValue = 50
+
+-- ฟังก์ชันสำหรับตั้งค่ากระโดด (รองรับทั้ง JumpPower/JumpHeight)
+local function setJump(height)
+	if humanoid.UseJumpPower ~= nil then
+		if humanoid.UseJumpPower == true then
+			humanoid.JumpPower = height
+		else
+			-- แปลงค่ากระโดดให้เข้ากับ JumpHeight ประมาณคร่าว ๆ
+			humanoid.JumpHeight = height / 10
+		end
+	else
+		-- fallback สำหรับ character รุ่นเก่า
+		humanoid.JumpPower = height
+	end
+end
+
+toggle.MouseButton1Click:Connect(function()
+	enabled = not enabled
+	if enabled then
+		toggle.Text = "ON"
+		toggle.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+		setJump(jumpValue)
+	else
+		toggle.Text = "OFF"
+		toggle.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+		setJump(50)
+	end
+end)
+
+-- เมื่อพิมพ์ค่าใหม่
+inputBox.FocusLost:Connect(function()
+	local num = tonumber(inputBox.Text)
+	if num then
+		jumpValue = math.clamp(num, 50, 500)
+		valueLabel.Text = "Jump: " .. jumpValue
+		if enabled then
+			setJump(jumpValue)
+		end
+	else
+		inputBox.Text = ""
+	end
+end)
+
+-- รีโหลดตัวละครเมื่อ respawn
+player.CharacterAdded:Connect(function(c)
+	char = c
+	humanoid = c:WaitForChild("Humanoid")
+	if enabled then
+		setJump(jumpValue)
+	end
+end)
