@@ -1,0 +1,195 @@
+-- 🧩 Prem Hub GUI (ลากได้ + ย่อ/ขยาย + Save/Teleport + มุมโค้ง + สายรุ้งวิ่ง)
+-- โดย GPT-5 & เปรม 💙
+
+local ScreenGui = Instance.new("ScreenGui")
+local Frame = Instance.new("Frame")
+local Title = Instance.new("TextLabel")
+local ToggleButton = Instance.new("TextButton")
+
+ScreenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.Name = "PremHub"
+
+Frame.Parent = ScreenGui
+Frame.Size = UDim2.new(0, 260, 0, 220)
+Frame.Position = UDim2.new(0, 50, 0, 50)
+Frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+
+-- มุมโค้ง GUI
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 12)
+UICorner.Parent = Frame
+
+-- สายรุ้งไล่สีวิ่ง
+local UIGrad = Instance.new("UIGradient")
+UIGrad.Rotation = 45
+UIGrad.Color = ColorSequence.new{
+	ColorSequenceKeypoint.new(0, Color3.fromRGB(255,0,0)),      
+	ColorSequenceKeypoint.new(0.2, Color3.fromRGB(255,127,0)),  
+	ColorSequenceKeypoint.new(0.4, Color3.fromRGB(255,255,0)),  
+	ColorSequenceKeypoint.new(0.6, Color3.fromRGB(0,255,0)),    
+	ColorSequenceKeypoint.new(0.8, Color3.fromRGB(0,0,255)),    
+	ColorSequenceKeypoint.new(1, Color3.fromRGB(139,0,255))     
+}
+UIGrad.Parent = Frame
+
+-- ฟังก์ชันให้สายรุ้งวิ่ง
+spawn(function()
+	local offset = 0
+	while true do
+		offset = offset + 0.01
+		if offset > 1 then offset = 0 end
+		UIGrad.Offset = Vector2.new(offset, offset)
+		wait(0.03)
+	end
+end)
+
+-- แถบชื่อ
+Title.Parent = Frame
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+Title.Text = "Prem Hub"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextScaled = true
+Title.Font = Enum.Font.SourceSansBold
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 12)
+TitleCorner.Parent = Title
+
+-- ปุ่มย่อ/ขยาย
+ToggleButton.Parent = Title
+ToggleButton.Size = UDim2.new(0, 30, 0, 30)
+ToggleButton.Position = UDim2.new(1, -35, 0, 0)
+ToggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+ToggleButton.Text = "▼"
+ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.TextScaled = true
+ToggleButton.Font = Enum.Font.SourceSansBold
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0,8)
+ToggleCorner.Parent = ToggleButton
+
+-- แสดงตำแหน่งเซฟ
+local SavePositionLabel = Instance.new("TextLabel")
+SavePositionLabel.Parent = Frame
+SavePositionLabel.Size = UDim2.new(0, 200, 0, 30)
+SavePositionLabel.Position = UDim2.new(0, 30, 0, 40)
+SavePositionLabel.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+SavePositionLabel.Text = "None"
+SavePositionLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+SavePositionLabel.TextScaled = true
+SavePositionLabel.Font = Enum.Font.SourceSansBold
+local SaveLabelCorner = Instance.new("UICorner")
+SaveLabelCorner.CornerRadius = UDim.new(0,10)
+SaveLabelCorner.Parent = SavePositionLabel
+
+-- ปุ่ม Save Potion
+local SaveButton = Instance.new("TextButton")
+SaveButton.Parent = Frame
+SaveButton.Size = UDim2.new(0, 200, 0, 40)
+SaveButton.Position = UDim2.new(0, 30, 0, 80)
+SaveButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+SaveButton.Text = "Save Potion"
+SaveButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+SaveButton.TextScaled = true
+SaveButton.Font = Enum.Font.SourceSansBold
+local SaveCorner = Instance.new("UICorner")
+SaveCorner.CornerRadius = UDim.new(0,10)
+SaveCorner.Parent = SaveButton
+
+-- ปุ่ม Teleport to Save Potion
+local TeleportButton = Instance.new("TextButton")
+TeleportButton.Parent = Frame
+TeleportButton.Size = UDim2.new(0, 200, 0, 40)
+TeleportButton.Position = UDim2.new(0, 30, 0, 130)
+TeleportButton.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+TeleportButton.Text = "Teleport to Save Potion"
+TeleportButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+TeleportButton.TextScaled = true
+TeleportButton.Font = Enum.Font.SourceSansBold
+local TeleportCorner = Instance.new("UICorner")
+TeleportCorner.CornerRadius = UDim.new(0,10)
+TeleportCorner.Parent = TeleportButton
+
+-- ตัวแปรเก็บตำแหน่งเซฟ
+local savedPosition = nil
+
+-- ฟังก์ชัน Save Potion
+SaveButton.MouseButton1Click:Connect(function()
+	local player = game.Players.LocalPlayer
+	if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+		savedPosition = player.Character.HumanoidRootPart.Position
+		SavePositionLabel.Text = string.format("X: %.1f, Y: %.1f, Z: %.1f", savedPosition.X, savedPosition.Y, savedPosition.Z)
+		SaveButton.BackgroundColor3 = Color3.fromRGB(150,150,150)
+		wait(0.3)
+		SaveButton.BackgroundColor3 = Color3.fromRGB(200,0,0)
+	end
+end)
+
+-- ฟังก์ชัน Teleport to Save Potion
+TeleportButton.MouseButton1Click:Connect(function()
+	if savedPosition then
+		local player = game.Players.LocalPlayer
+		if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+			TeleportButton.BackgroundColor3 = Color3.fromRGB(150,150,150)
+			player.Character.HumanoidRootPart.CFrame = CFrame.new(savedPosition)
+			wait(0.3)
+			TeleportButton.BackgroundColor3 = Color3.fromRGB(200,0,0)
+		end
+	end
+end)
+
+-- ระบบย่อ/ขยาย GUI
+local isMinimized = false
+ToggleButton.MouseButton1Click:Connect(function()
+	isMinimized = not isMinimized
+	ToggleButton.Text = isMinimized and "▲" or "▼"
+
+	local objsToToggle = {SavePositionLabel, SaveButton, TeleportButton}
+
+	for _, obj in pairs(objsToToggle) do
+		obj.Visible = not isMinimized
+	end
+
+	Frame.Size = isMinimized and UDim2.new(0, 260, 0, 30) or UDim2.new(0, 260, 0, 220)
+end)
+
+-- ระบบลาก GUI
+local UserInputService = game:GetService("UserInputService")
+local dragging, dragInput, mousePos, framePos
+
+local function update(input)
+	local delta = input.Position - mousePos
+	Frame.Position = UDim2.new(
+		framePos.X.Scale,
+		framePos.X.Offset + delta.X,
+		framePos.Y.Scale,
+		framePos.Y.Offset + delta.Y
+	)
+end
+
+Title.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 then
+		dragging = true
+		mousePos = input.Position
+		framePos = Frame.Position
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+Title.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if dragging and input == dragInput then
+		update(input)
+	end
+end)
