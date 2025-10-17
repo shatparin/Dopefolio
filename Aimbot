@@ -1,0 +1,186 @@
+-- PremHub v7 Ultimate (LocalScript)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+
+-- CONFIG
+local FOV_RADIUS = 150
+local aimbotEnabled = false
+local fovVisible = true
+local minimized = false
+
+-- ===== GUI =====
+local ScreenGui = Instance.new("ScreenGui", PlayerGui)
+ScreenGui.Name = "PremHubV7"
+
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0,300,0,220)
+Frame.Position = UDim2.new(0.5,-150,0.35,-110)
+Frame.Active = true
+Frame.Draggable = true
+Frame.BackgroundColor3 = Color3.fromRGB(22,22,22)
+Instance.new("UICorner", Frame).CornerRadius = UDim.new(0,10)
+
+-- Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(0,160,0,28)
+Title.Position = UDim2.new(0,8,0,6)
+Title.BackgroundTransparency = 1
+Title.Text = "💚 Prem Hub v7"
+Title.Font = Enum.Font.GothamBold
+Title.TextScaled = true
+Title.TextColor3 = Color3.new(1,1,1)
+
+-- Subtitle
+local Subtitle = Instance.new("TextLabel", Frame)
+Subtitle.Size = UDim2.new(1,0,0,22)
+Subtitle.Position = UDim2.new(0,0,0,38)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "🎯 Aimbot"
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextScaled = true
+Subtitle.TextColor3 = Color3.new(1,1,1)
+
+-- Buttons
+local function createButton(parent,text,posY)
+    local btn = Instance.new("TextButton", parent)
+    btn.Size = UDim2.new(0.6,0,0,36)
+    btn.Position = UDim2.new(0.2,0,0,posY)
+    btn.Text = text
+    btn.Font = Enum.Font.GothamBold
+    btn.TextScaled = true
+    btn.AutoButtonColor = false
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0,8)
+    return btn
+end
+
+local btnAimbot = createButton(Frame,"Aimbot: OFF",72)
+local btnFOV = createButton(Frame,"FOV: ON",116)
+
+local function setBtnColor(btn,state)
+    btn.BackgroundColor3 = state and Color3.fromRGB(0,200,0) or Color3.fromRGB(150,0,0)
+end
+
+setBtnColor(btnAimbot, aimbotEnabled)
+setBtnColor(btnFOV, fovVisible)
+
+-- Triangle minimize button
+local TriBtn = Instance.new("TextButton", Frame)
+TriBtn.Size = UDim2.new(0,34,0,28)
+TriBtn.Position = UDim2.new(1,-40,0,6)
+TriBtn.Text = "▼"
+TriBtn.Font = Enum.Font.GothamBold
+TriBtn.TextScaled = true
+TriBtn.BackgroundTransparency = 0.35
+TriBtn.AutoButtonColor = false
+Instance.new("UICorner", TriBtn).CornerRadius = UDim.new(0,6)
+
+-- ===== FOV + Center Dot =====
+local FOVFrame = Instance.new("Frame", ScreenGui)
+FOVFrame.Size = UDim2.new(0,FOV_RADIUS*2,0,FOV_RADIUS*2)
+FOVFrame.AnchorPoint = Vector2.new(0.5,0.5)
+FOVFrame.Position = UDim2.new(0.5,0,0.5,0)
+FOVFrame.BackgroundTransparency = 1
+FOVFrame.Visible = fovVisible
+Instance.new("UICorner", FOVFrame).CornerRadius = UDim.new(0.5,0)
+local FOVStroke = Instance.new("UIStroke", FOVFrame)
+FOVStroke.Color = Color3.fromRGB(255,0,0) -- สีแดง
+FOVStroke.Thickness = 2
+FOVStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local CenterDot = Instance.new("Frame", ScreenGui)
+CenterDot.Size = UDim2.new(0,12,0,12) -- เพิ่มขนาดเด่นขึ้น
+CenterDot.AnchorPoint = Vector2.new(0.5,0.5)
+CenterDot.Position = UDim2.new(0.5,0,0.5,0)
+CenterDot.BackgroundColor3 = Color3.fromRGB(255,0,0)
+CenterDot.Visible = false
+Instance.new("UICorner", CenterDot).CornerRadius = UDim.new(0.5,0)
+
+-- ===== Targeting =====
+local function getTargetPart(character)
+    if not character then return nil end
+    return character:FindFirstChild("HumanoidRootPart") or character:FindFirstChild("Head")
+end
+
+local function isValidTarget(player)
+    if not player or player == LocalPlayer then return false end
+    if not player.Character then return false end
+    local humanoid = player.Character:FindFirstChildOfClass("Humanoid")
+    if humanoid and humanoid.Health and humanoid.Health <= 0 then return false end
+    return getTargetPart(player.Character) ~= nil
+end
+
+local function getClosestEnemy()
+    local closest, shortest = nil, FOV_RADIUS
+    local vs = Camera.ViewportSize
+    local center = Vector2.new(vs.X/2, vs.Y/2)
+    for _, pl in pairs(Players:GetPlayers()) do
+        if isValidTarget(pl) then
+            local part = getTargetPart(pl.Character)
+            local sp, onScreen = Camera:WorldToViewportPoint(part.Position)
+            if sp.Z > 0 and onScreen then
+                local d = (Vector2.new(sp.X,sp.Y)-center).Magnitude
+                if d <= FOV_RADIUS and d < shortest then
+                    shortest = d
+                    closest = pl
+                end
+            end
+        end
+    end
+    return closest
+end
+
+-- ===== Aimbot Logic =====
+local function aimAtTarget(target)
+    if target and target.Character then
+        local part = getTargetPart(target.Character)
+        if part then
+            local pos = part.Position + Vector3.new(0,1.5,0)
+            Camera.CFrame = CFrame.lookAt(Camera.CFrame.Position,pos)
+        end
+    end
+end
+
+-- Bind to RenderStepped
+RunService.RenderStepped:Connect(function()
+    FOVFrame.Position = UDim2.new(0.5,0,0.5,0)
+    CenterDot.Position = UDim2.new(0.5,0,0.5,0)
+    if aimbotEnabled then
+        local target = getClosestEnemy()
+        aimAtTarget(target)
+        CenterDot.Visible = target ~= nil
+    else
+        CenterDot.Visible = false
+    end
+end)
+
+-- ===== Button Callbacks =====
+btnAimbot.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    btnAimbot.Text = aimbotEnabled and "Aimbot: ON" or "Aimbot: OFF"
+    setBtnColor(btnAimbot, aimbotEnabled)
+end)
+
+btnFOV.MouseButton1Click:Connect(function()
+    fovVisible = not fovVisible
+    FOVFrame.Visible = fovVisible
+    btnFOV.Text = fovVisible and "FOV: ON" or "FOV: OFF"
+    setBtnColor(btnFOV, fovVisible)
+end)
+
+TriBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    TriBtn.Text = minimized and "▲" or "▼"
+    local newSize = minimized and UDim2.new(0,200,0,48) or UDim2.new(0,300,0,220)
+    TweenService:Create(Frame,TweenInfo.new(0.25,Enum.EasingStyle.Quad,Enum.EasingDirection.Out),{Size=newSize}):Play()
+    Subtitle.Visible = not minimized
+    btnAimbot.Visible = not minimized
+    btnFOV.Visible = not minimized
+end)
+
+print("[PremHub v7] Loaded - Aimbot locks targets in FOV with Red FOV and Center Dot")
