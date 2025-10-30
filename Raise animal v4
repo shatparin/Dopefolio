@@ -1,0 +1,280 @@
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PremHubGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Main Frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0,600,0,400)
+frame.Position = UDim2.new(0.5,-300,0.5,-200)
+frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
+frame.BorderSizePixel = 3
+frame.BorderColor3 = Color3.fromRGB(0,170,255)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,15)
+corner.Parent = frame
+
+-- Top Text
+local topText = Instance.new("TextLabel")
+topText.Parent = frame
+topText.Size = UDim2.new(1,-80,0,45)
+topText.Position = UDim2.new(0,10,0,5)
+topText.BackgroundTransparency = 1
+topText.Text = "💀 Prem Hub"
+topText.TextColor3 = Color3.new(1,1,1)
+topText.Font = Enum.Font.SourceSansBold
+topText.TextSize = 32
+topText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Minimize / Close
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Parent = frame
+minimizeBtn.Size = UDim2.new(0,30,0,30)
+minimizeBtn.Position = UDim2.new(1,-80,0,5)
+minimizeBtn.Text = "-"
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 28
+minimizeBtn.BackgroundTransparency = 1
+minimizeBtn.TextColor3 = Color3.fromRGB(0,255,255)
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = frame
+closeBtn.Size = UDim2.new(0,30,0,30)
+closeBtn.Position = UDim2.new(1,-40,0,5)
+closeBtn.Text = "x"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 26
+closeBtn.BackgroundTransparency = 1
+closeBtn.TextColor3 = Color3.fromRGB(255,80,80)
+
+-- Skull Button
+local skullBtn = Instance.new("ImageButton")
+skullBtn.Parent = screenGui
+skullBtn.Size = UDim2.new(0,50,0,50)
+skullBtn.Position = UDim2.new(0.05,0,0.2,0)
+skullBtn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+skullBtn.BorderSizePixel = 3
+skullBtn.BorderColor3 = Color3.fromRGB(0,170,255)
+skullBtn.Image = "rbxassetid://74441873278389"
+skullBtn.Active = true
+skullBtn.Draggable = true
+local skullCorner = Instance.new("UICorner")
+skullCorner.CornerRadius = UDim.new(0,12)
+skullCorner.Parent = skullBtn
+
+-- Auto Raise
+local autoRaiseBtn = Instance.new("TextButton")
+autoRaiseBtn.Parent = frame
+autoRaiseBtn.Size = UDim2.new(0,180,0,45)
+autoRaiseBtn.Position = UDim2.new(0,20,0,60)
+autoRaiseBtn.Text = "🐾 Auto Raise"
+autoRaiseBtn.Font = Enum.Font.SourceSansBold
+autoRaiseBtn.TextSize = 24
+autoRaiseBtn.BackgroundColor3 = Color3.fromRGB(0,120,255)
+autoRaiseBtn.TextColor3 = Color3.new(1,1,1)
+local autoCorner = Instance.new("UICorner")
+autoCorner.CornerRadius = UDim.new(0,12)
+autoCorner.Parent = autoRaiseBtn
+
+-- Credit
+local creditBtn = Instance.new("TextButton")
+creditBtn.Parent = frame
+creditBtn.Size = UDim2.new(0,180,0,45)
+creditBtn.Position = UDim2.new(0,20,0,120)
+creditBtn.Text = "💳 Credit"
+creditBtn.Font = Enum.Font.SourceSansBold
+creditBtn.TextSize = 24
+creditBtn.BackgroundColor3 = Color3.fromRGB(0,120,255)
+creditBtn.TextColor3 = Color3.new(1,1,1)
+local creditCorner = Instance.new("UICorner")
+creditCorner.CornerRadius = UDim.new(0,12)
+creditCorner.Parent = creditBtn
+
+-- Slow Animal + Toggle Button
+local slowLabel = Instance.new("TextLabel")
+slowLabel.Parent = frame
+slowLabel.Size = UDim2.new(0,180,0,45)
+slowLabel.Position = UDim2.new(0,220,0,60)
+slowLabel.BackgroundTransparency = 1
+slowLabel.Text = "🐢 Slow Animal"
+slowLabel.Font = Enum.Font.SourceSansBold
+slowLabel.TextSize = 24
+slowLabel.TextColor3 = Color3.new(1,1,1)
+slowLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local toggleMenuBtn = Instance.new("TextButton")
+toggleMenuBtn.Parent = frame
+toggleMenuBtn.Size = UDim2.new(0,60,0,40)
+toggleMenuBtn.Position = UDim2.new(0,410,0,60)
+toggleMenuBtn.Text = "OFF"
+toggleMenuBtn.Font = Enum.Font.SourceSansBold
+toggleMenuBtn.TextSize = 22
+toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+toggleMenuBtn.TextColor3 = Color3.new(1,1,1)
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0,10)
+toggleCorner.Parent = toggleMenuBtn
+
+-- Mini Frame (เมนูย่อย)
+local miniFrame = Instance.new("Frame")
+miniFrame.Size = UDim2.new(0,300,0,150)
+miniFrame.Position = UDim2.new(0.5,-150,0.5,-75)
+miniFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+miniFrame.BorderColor3 = Color3.fromRGB(0,170,255)
+miniFrame.BorderSizePixel = 3
+miniFrame.Visible = false
+miniFrame.Active = true
+miniFrame.Draggable = true
+miniFrame.Parent = screenGui
+local mfCorner = Instance.new("UICorner")
+mfCorner.CornerRadius = UDim.new(0,12)
+mfCorner.Parent = miniFrame
+
+local mfTitle = Instance.new("TextLabel")
+mfTitle.Parent = miniFrame
+mfTitle.Size = UDim2.new(1,0,0,40)
+mfTitle.Position = UDim2.new(0,0,0,5)
+mfTitle.BackgroundTransparency = 1
+mfTitle.Text = "🐢 Slow Animal"
+mfTitle.TextColor3 = Color3.new(1,1,1)
+mfTitle.Font = Enum.Font.SourceSansBold
+mfTitle.TextSize = 22
+
+local mfBtn = Instance.new("TextButton")
+mfBtn.Parent = miniFrame
+mfBtn.Size = UDim2.new(0,120,0,35)
+mfBtn.Position = UDim2.new(0.5,-60,1,-50)
+mfBtn.Text = "OFF"
+mfBtn.Font = Enum.Font.SourceSansBold
+mfBtn.TextSize = 20
+mfBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+mfBtn.TextColor3 = Color3.new(1,1,1)
+local mfCorner2 = Instance.new("UICorner")
+mfCorner2.CornerRadius = UDim.new(0,8)
+mfCorner2.Parent = mfBtn
+
+-- Toggle Mini Frame
+toggleMenuBtn.MouseButton1Click:Connect(function()
+	miniFrame.Visible = not miniFrame.Visible
+	if miniFrame.Visible then
+		toggleMenuBtn.Text = "ON"
+		toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+	else
+		toggleMenuBtn.Text = "OFF"
+		toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+	end
+end)
+
+-- Simulate Left/Right
+local autoPress = false
+mfBtn.MouseButton1Click:Connect(function()
+	autoPress = not autoPress
+	if autoPress then
+		mfBtn.Text = "ON"
+		mfBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+		coroutine.wrap(function()
+			while autoPress do
+				print("Simulate Left")
+				wait(0.2)
+				print("Simulate Right")
+				wait(0.2)
+			end
+		end)()
+	else
+		mfBtn.Text = "OFF"
+		mfBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+	end
+end)
+
+-- Switch Content Auto Raise
+autoRaiseBtn.MouseButton1Click:Connect(function()
+	slowLabel.Text = "🐢 Slow Animal"
+	toggleMenuBtn.Visible = true
+	toggleMenuBtn.Text = "OFF"
+	toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+end)
+
+-- Switch Content Credit
+creditBtn.MouseButton1Click:Connect(function()
+	slowLabel.Text = "tiktok:prem.hub.script\nIG:prem33122"
+	toggleMenuBtn.Visible = false
+	mfBtn.Text = "OFF"
+	autoPress = false
+end)
+
+-- Minimize
+minimizeBtn.MouseButton1Click:Connect(function()
+	frame.Visible = false
+end)
+
+-- Close
+closeBtn.MouseButton1Click:Connect(function()
+	local confirm = Instance.new("Frame")
+	confirm.Size = UDim2.new(0,300,0,150)
+	confirm.Position = UDim2.new(0.5,-150,0.5,-75)
+	confirm.BackgroundColor3 = Color3.fromRGB(30,30,30)
+	confirm.BorderColor3 = Color3.fromRGB(0,170,255)
+	confirm.BorderSizePixel = 3
+	confirm.Parent = screenGui
+	local cCorner = Instance.new("UICorner")
+	cCorner.CornerRadius = UDim.new(0,12)
+	cCorner.Parent = confirm
+
+	local cText = Instance.new("TextLabel")
+	cText.Parent = confirm
+	cText.Size = UDim2.new(1,0,0,50)
+	cText.Position = UDim2.new(0,0,0,10)
+	cText.BackgroundTransparency = 1
+	cText.Text = "Close GUI permanently?"
+	cText.TextColor3 = Color3.new(1,1,1)
+	cText.Font = Enum.Font.SourceSansBold
+	cText.TextSize = 22
+
+	local okBtn = Instance.new("TextButton")
+	okBtn.Parent = confirm
+	okBtn.Size = UDim2.new(0,100,0,40)
+	okBtn.Position = UDim2.new(0.25,0,1,-50)
+	okBtn.Text = "OK"
+	okBtn.Font = Enum.Font.SourceSansBold
+	okBtn.TextSize = 22
+	okBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+	okBtn.TextColor3 = Color3.new(1,1,1)
+	local okCorner = Instance.new("UICorner")
+	okCorner.CornerRadius = UDim.new(0,8)
+	okCorner.Parent = okBtn
+
+	local noBtn = Instance.new("TextButton")
+	noBtn.Parent = confirm
+	noBtn.Size = UDim2.new(0,100,0,40)
+	noBtn.Position = UDim2.new(0.55,0,1,-50)
+	noBtn.Text = "NO"
+	noBtn.Font = Enum.Font.SourceSansBold
+	noBtn.TextSize = 22
+	noBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+	noBtn.TextColor3 = Color3.new(1,1,1)
+	local noCorner = Instance.new("UICorner")
+	noCorner.CornerRadius = UDim.new(0,8)
+	noCorner.Parent = noBtn
+
+	okBtn.MouseButton1Click:Connect(function()
+		frame:Destroy()
+		miniFrame:Destroy()
+		confirm:Destroy()
+	end)
+	noBtn.MouseButton1Click:Connect(function()
+		confirm:Destroy()
+	end)
+
+end)
+
+-- Skull Button Toggle
+skullBtn.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
+end)
