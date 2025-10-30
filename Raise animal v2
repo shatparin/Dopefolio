@@ -1,0 +1,284 @@
+--[[ 💀 Prem Hub GUI (Auto Raise + Slow Animal + Credit) โดย GPT-5 สำหรับเปรม ]]
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- 🧱 ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "PremHubGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- 🎨 กรอบหลัก
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 600, 0, 400)
+frame.Position = UDim2.new(0.5, -300, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.BorderSizePixel = 3
+frame.BorderColor3 = Color3.fromRGB(0, 170, 255)
+frame.Active = true
+frame.Draggable = true
+frame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 15)
+corner.Parent = frame
+
+-- 🔠 ข้อความบนสุด
+local topText = Instance.new("TextLabel")
+topText.Parent = frame
+topText.Size = UDim2.new(1, -80, 0, 45)
+topText.Position = UDim2.new(0, 10, 0, 5)
+topText.BackgroundTransparency = 1
+topText.Text = "💀 Prem Hub"
+topText.TextColor3 = Color3.new(1, 1, 1)
+topText.Font = Enum.Font.SourceSansBold
+topText.TextSize = 32
+topText.TextXAlignment = Enum.TextXAlignment.Left
+
+-- ปุ่มย่อ / ปิด
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Parent = frame
+minimizeBtn.Size = UDim2.new(0, 30, 0, 30)
+minimizeBtn.Position = UDim2.new(1, -80, 0, 5)
+minimizeBtn.Text = "-"
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 28
+minimizeBtn.BackgroundTransparency = 1
+minimizeBtn.TextColor3 = Color3.fromRGB(0, 255, 255)
+
+local closeBtn = Instance.new("TextButton")
+closeBtn.Parent = frame
+closeBtn.Size = UDim2.new(0, 30, 0, 30)
+closeBtn.Position = UDim2.new(1, -40, 0, 5)
+closeBtn.Text = "x"
+closeBtn.Font = Enum.Font.SourceSansBold
+closeBtn.TextSize = 26
+closeBtn.BackgroundTransparency = 1
+closeBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+
+-- 💀 ปุ่มหัวกะโหลก
+local skullBtn = Instance.new("ImageButton")
+skullBtn.Parent = screenGui
+skullBtn.Size = UDim2.new(0, 50, 0, 50)
+skullBtn.Position = UDim2.new(0.05, 0, 0.2, 0)
+skullBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+skullBtn.BorderSizePixel = 3
+skullBtn.BorderColor3 = Color3.fromRGB(0, 170, 255)
+skullBtn.Image = "rbxassetid://74441873278389"
+skullBtn.Active = true
+skullBtn.Draggable = true
+
+local skullCorner = Instance.new("UICorner")
+skullCorner.CornerRadius = UDim.new(0, 12)
+skullCorner.Parent = skullBtn
+
+-- 🌿 ปุ่ม Auto Raise
+local autoRaiseBtn = Instance.new("TextButton")
+autoRaiseBtn.Parent = frame
+autoRaiseBtn.Size = UDim2.new(0, 180, 0, 45)
+autoRaiseBtn.Position = UDim2.new(0, 20, 0, 60)
+autoRaiseBtn.Text = "🐾 Auto Raise"
+autoRaiseBtn.Font = Enum.Font.SourceSansBold
+autoRaiseBtn.TextSize = 24
+autoRaiseBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+autoRaiseBtn.TextColor3 = Color3.new(1, 1, 1)
+local autoCorner = Instance.new("UICorner")
+autoCorner.CornerRadius = UDim.new(0, 12)
+autoCorner.Parent = autoRaiseBtn
+
+-- 🌿 ปุ่ม Credit
+local creditBtn = Instance.new("TextButton")
+creditBtn.Parent = frame
+creditBtn.Size = UDim2.new(0, 180, 0, 45)
+creditBtn.Position = UDim2.new(0, 20, 0, 120)
+creditBtn.Text = "💳 Credit"
+creditBtn.Font = Enum.Font.SourceSansBold
+creditBtn.TextSize = 24
+creditBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 255)
+creditBtn.TextColor3 = Color3.new(1, 1, 1)
+local creditCorner = Instance.new("UICorner")
+creditCorner.CornerRadius = UDim.new(0, 12)
+creditCorner.Parent = creditBtn
+
+-- 🌿 เนื้อหา Slow Animal
+local slowLabel = Instance.new("TextLabel")
+slowLabel.Parent = frame
+slowLabel.Size = UDim2.new(0, 200, 0, 45)
+slowLabel.Position = UDim2.new(0, 220, 0, 60)
+slowLabel.BackgroundTransparency = 1
+slowLabel.Text = "🐢 Slow Animal"
+slowLabel.Font = Enum.Font.SourceSansBold
+slowLabel.TextSize = 24
+slowLabel.TextColor3 = Color3.new(1,1,1)
+slowLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local toggleMenuBtn = Instance.new("TextButton")
+toggleMenuBtn.Parent = frame
+toggleMenuBtn.Size = UDim2.new(0, 60, 0, 40)
+toggleMenuBtn.Position = UDim2.new(0, 420, 0, 60)
+toggleMenuBtn.Text = "OFF"
+toggleMenuBtn.Font = Enum.Font.SourceSansBold
+toggleMenuBtn.TextSize = 22
+toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+toggleMenuBtn.TextColor3 = Color3.new(1,1,1)
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(0,10)
+toggleCorner.Parent = toggleMenuBtn
+
+-- 🧩 เมนูย่อย Slow Animal
+local miniFrame = Instance.new("Frame")
+miniFrame.Size = UDim2.new(0, 300, 0, 150)
+miniFrame.Position = UDim2.new(0.5, -150, 0.5, -75)
+miniFrame.BackgroundColor3 = Color3.fromRGB(40,40,40)
+miniFrame.BorderColor3 = Color3.fromRGB(0,170,255)
+miniFrame.BorderSizePixel = 3
+miniFrame.Visible = false
+miniFrame.Active = true
+miniFrame.Draggable = true
+miniFrame.Parent = screenGui
+
+local mfCorner = Instance.new("UICorner")
+mfCorner.CornerRadius = UDim.new(0,12)
+mfCorner.Parent = miniFrame
+
+local mfTitle = Instance.new("TextLabel")
+mfTitle.Parent = miniFrame
+mfTitle.Size = UDim2.new(1,0,0,40)
+mfTitle.Position = UDim2.new(0,0,0,5)
+mfTitle.BackgroundTransparency = 1
+mfTitle.Text = "🐢 Slow Animal"
+mfTitle.TextColor3 = Color3.new(1,1,1)
+mfTitle.Font = Enum.Font.SourceSansBold
+mfTitle.TextSize = 22
+
+local mfBtn = Instance.new("TextButton")
+mfBtn.Parent = miniFrame
+mfBtn.Size = UDim2.new(0,120,0,35)
+mfBtn.Position = UDim2.new(0.5,-60,1,-50)
+mfBtn.Text = "OFF"
+mfBtn.Font = Enum.Font.SourceSansBold
+mfBtn.TextSize = 20
+mfBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+mfBtn.TextColor3 = Color3.new(1,1,1)
+local mfCorner2 = Instance.new("UICorner")
+mfCorner2.CornerRadius = UDim.new(0,8)
+mfCorner2.Parent = mfBtn
+
+-- 🧠 ระบบสลับปุ่มซ้าย/ขวา
+local autoPress = false
+mfBtn.MouseButton1Click:Connect(function()
+    autoPress = not autoPress
+    if autoPress then
+        mfBtn.Text = "ON"
+        mfBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+        while autoPress do
+            keypress(Enum.KeyCode.A)
+            task.wait(0.1)
+            keyrelease(Enum.KeyCode.A)
+            task.wait(0.1)
+            keypress(Enum.KeyCode.D)
+            task.wait(0.1)
+            keyrelease(Enum.KeyCode.D)
+            task.wait(0.1)
+        end
+    else
+        mfBtn.Text = "OFF"
+        mfBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+    end
+end)
+
+-- เปิด/ปิดเมนูย่อย
+toggleMenuBtn.MouseButton1Click:Connect(function()
+    miniFrame.Visible = not miniFrame.Visible
+    if miniFrame.Visible then
+        toggleMenuBtn.Text = "ON"
+        toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+    else
+        toggleMenuBtn.Text = "OFF"
+        toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+    end
+end)
+
+-- กด Auto Raise
+autoRaiseBtn.MouseButton1Click:Connect(function()
+    slowLabel.Text = "🐢 Slow Animal"
+    toggleMenuBtn.Text = "OFF"
+    toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+end)
+
+-- กด Credit
+creditBtn.MouseButton1Click:Connect(function()
+    slowLabel.Text = "tiktok:prem.hub.script\nIG:prem33122"
+    toggleMenuBtn.Text = "OFF"
+    toggleMenuBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+end)
+
+-- ปุ่มย่อ
+minimizeBtn.MouseButton1Click:Connect(function()
+    frame.Visible = false
+end)
+
+-- ปุ่ม X
+closeBtn.MouseButton1Click:Connect(function()
+    local confirmFrame = Instance.new("Frame")
+    confirmFrame.Size = UDim2.new(0,250,0,120)
+    confirmFrame.Position = UDim2.new(0.5,-125,0.5,-60)
+    confirmFrame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    confirmFrame.BorderColor3 = Color3.fromRGB(0,170,255)
+    confirmFrame.BorderSizePixel = 3
+    confirmFrame.Parent = screenGui
+
+    local cCorner = Instance.new("UICorner")
+    cCorner.CornerRadius = UDim.new(0,12)
+    cCorner.Parent = confirmFrame
+
+    local textLabel = Instance.new("TextLabel")
+    textLabel.Parent = confirmFrame
+    textLabel.Size = UDim2.new(1,0,0,40)
+    textLabel.Position = UDim2.new(0,0,0,10)
+    textLabel.BackgroundTransparency = 1
+    textLabel.Text = "Close GUI permanently?"
+    textLabel.TextColor3 = Color3.new(1,1,1)
+    textLabel.Font = Enum.Font.SourceSansBold
+    textLabel.TextSize = 20
+
+    local okBtn = Instance.new("TextButton")
+    okBtn.Parent = confirmFrame
+    okBtn.Size = UDim2.new(0,100,0,35)
+    okBtn.Position = UDim2.new(0.25,0,0,70)
+    okBtn.Text = "OK"
+    okBtn.Font = Enum.Font.SourceSansBold
+    okBtn.TextSize = 20
+    okBtn.BackgroundColor3 = Color3.fromRGB(0,200,100)
+    okBtn.TextColor3 = Color3.new(1,1,1)
+    local okCorner = Instance.new("UICorner")
+    okCorner.CornerRadius = UDim.new(0,8)
+    okCorner.Parent = okBtn
+
+    local noBtn = Instance.new("TextButton")
+    noBtn.Parent = confirmFrame
+    noBtn.Size = UDim2.new(0,100,0,35)
+    noBtn.Position = UDim2.new(0.55,0,0,70)
+    noBtn.Text = "No"
+    noBtn.Font = Enum.Font.SourceSansBold
+    noBtn.TextSize = 20
+    noBtn.BackgroundColor3 = Color3.fromRGB(200,50,50)
+    noBtn.TextColor3 = Color3.new(1,1,1)
+    local noCorner = Instance.new("UICorner")
+    noCorner.CornerRadius = UDim.new(0,8)
+    noCorner.Parent = noBtn
+
+    okBtn.MouseButton1Click:Connect(function()
+        frame:Destroy()
+        miniFrame:Destroy()
+        confirmFrame:Destroy()
+    end)
+    noBtn.MouseButton1Click:Connect(function()
+        confirmFrame:Destroy()
+    end)
+end)
+
+-- ปุ่มหัวกะโหลก
+skullBtn.MouseButton1Click:Connect(function()
+    frame.Visible = not frame.Visible
+end)
