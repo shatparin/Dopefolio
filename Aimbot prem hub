@@ -1,0 +1,358 @@
+-- Hunter Anav v0.7 (Speed Hack + Aimbot) — FOV centered on screen
+-- Put as LocalScript under StarterGui or PlayerGui
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UIS = game:GetService("UserInputService")
+local workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+-- cleanup old
+if PlayerGui:FindFirstChild("HunterAnav") then
+    PlayerGui.HunterAnav:Destroy()
+end
+
+-- UI container
+local screen = Instance.new("ScreenGui", PlayerGui)
+screen.Name = "HunterAnav"
+screen.ResetOnSpawn = false
+
+-- Toggle icon (draggable)
+local toggleFrame = Instance.new("Frame", screen)
+toggleFrame.Size = UDim2.new(0,40,0,40)
+toggleFrame.Position = UDim2.new(0,20,0,20)
+toggleFrame.BackgroundColor3 = Color3.fromRGB(0,150,255)
+toggleFrame.BorderSizePixel = 0
+toggleFrame.Active = true
+local tfCorner = Instance.new("UICorner", toggleFrame); tfCorner.CornerRadius = UDim.new(0,8)
+
+local toggleBtn = Instance.new("ImageButton", toggleFrame)
+toggleBtn.Size = UDim2.new(1,0,1,0)
+toggleBtn.Image = "rbxassetid://89065350565771"
+toggleBtn.BackgroundTransparency = 0
+
+-- Main window
+local window = Instance.new("Frame", screen)
+window.Name = "Window"
+window.Size = UDim2.new(0,700,0,450)
+window.Position = UDim2.new(0.5,-350,0.5,-225)
+window.BackgroundColor3 = Color3.fromRGB(18,18,18)
+window.BorderSizePixel = 0
+window.Active = true
+window.Draggable = true
+window.Visible = true
+
+toggleBtn.MouseButton1Click:Connect(function()
+    window.Visible = not window.Visible
+end)
+
+-- Title
+local titleBar = Instance.new("Frame", window)
+titleBar.Size = UDim2.new(1,0,0,40)
+titleBar.BackgroundColor3 = Color3.fromRGB(14,14,14)
+local title = Instance.new("TextLabel", titleBar)
+title.Size = UDim2.new(1,-10,1,0)
+title.Position = UDim2.new(0,8,0,0)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+title.TextColor3 = Color3.fromRGB(0,255,150)
+title.Text = "Hunter Anav -0.1d"
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+-- Sidebar (GENERAL / COMBAT)
+local sidebar = Instance.new("Frame", window)
+sidebar.Size = UDim2.new(0,180,1,-40)
+sidebar.Position = UDim2.new(0,0,0,40)
+sidebar.BackgroundColor3 = Color3.fromRGB(20,20,20)
+
+local function makeTabButton(name, y)
+    local btn = Instance.new("TextButton", sidebar)
+    btn.Size = UDim2.new(1,-16,0,50)
+    btn.Position = UDim2.new(0,8,0,10 + (y-1)*60)
+    btn.BackgroundColor3 = Color3.fromRGB(30,30,30)
+    btn.BorderSizePixel = 0
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 18
+    btn.TextColor3 = Color3.fromRGB(200,200,200)
+    btn.Text = name
+    btn.Name = name.."Btn"
+    btn.AutoButtonColor = false
+    return btn
+end
+
+local tabs = {"GENERAL","COMBAT"}
+local tabButtons = {}
+for i,t in ipairs(tabs) do tabButtons[t] = makeTabButton(t,i) end
+
+-- Content area
+local content = Instance.new("Frame", window)
+content.Size = UDim2.new(1,-180,1,-40)
+content.Position = UDim2.new(0,180,0,40)
+content.BackgroundColor3 = Color3.fromRGB(24,24,24)
+
+local catLabel = Instance.new("TextLabel", content)
+catLabel.Size = UDim2.new(1,-16,0,36)
+catLabel.Position = UDim2.new(0,8,0,8)
+catLabel.BackgroundTransparency = 1
+catLabel.Font = Enum.Font.SourceSansBold
+catLabel.TextSize = 18
+catLabel.TextColor3 = Color3.fromRGB(200,200,200)
+catLabel.TextXAlignment = Enum.TextXAlignment.Left
+catLabel.Text = "GENERAL"
+
+-- ===== GENERAL: Speed Hack =====
+local speedLabel = Instance.new("TextLabel", content)
+speedLabel.Size = UDim2.new(0,130,0,28)
+speedLabel.Position = UDim2.new(0,8,0,60)
+speedLabel.BackgroundTransparency = 1
+speedLabel.Font = Enum.Font.SourceSans
+speedLabel.TextSize = 18
+speedLabel.TextColor3 = Color3.fromRGB(230,230,230)
+speedLabel.Text = "Speed Hack"
+speedLabel.TextXAlignment = Enum.TextXAlignment.Left
+
+local speedInput = Instance.new("TextBox", content)
+speedInput.Size = UDim2.new(0,120,0,28)
+speedInput.Position = UDim2.new(0,150,0,60)
+speedInput.BackgroundColor3 = Color3.fromRGB(45,45,45)
+speedInput.PlaceholderText = "1-3.5"
+speedInput.TextColor3 = Color3.fromRGB(240,240,240)
+speedInput.Font = Enum.Font.SourceSansBold
+speedInput.TextSize = 18
+speedInput.ClearTextOnFocus = false
+speedInput.TextXAlignment = Enum.TextXAlignment.Center
+
+-- ===== COMBAT: Aimbot + FOV (centered) =====
+local aimbotLabel = Instance.new("TextLabel", content)
+aimbotLabel.Size = UDim2.new(0,130,0,28)
+aimbotLabel.Position = UDim2.new(0,8,0,60)
+aimbotLabel.BackgroundTransparency = 1
+aimbotLabel.Font = Enum.Font.SourceSans
+aimbotLabel.TextSize = 18
+aimbotLabel.TextColor3 = Color3.fromRGB(230,230,230)
+aimbotLabel.Text = "Aimbot"
+aimbotLabel.TextXAlignment = Enum.TextXAlignment.Left
+aimbotLabel.Visible = false
+
+local aimbotToggle = Instance.new("TextButton", content)
+aimbotToggle.Size = UDim2.new(0,28,0,28)
+aimbotToggle.Position = UDim2.new(0,150,0,60)
+aimbotToggle.BackgroundColor3 = Color3.fromRGB(45,45,45)
+local aimbotMark = Instance.new("TextLabel", aimbotToggle)
+aimbotMark.Size = UDim2.new(1,0,1,0)
+aimbotMark.BackgroundTransparency = 1
+aimbotMark.Font = Enum.Font.SourceSansBold
+aimbotMark.TextSize = 18
+aimbotMark.TextColor3 = Color3.fromRGB(0,220,120)
+aimbotMark.Text = "✔"
+aimbotMark.Visible = false
+
+local aimbotEnabled = false
+aimbotToggle.MouseButton1Click:Connect(function()
+    aimbotEnabled = not aimbotEnabled
+    aimbotMark.Visible = aimbotEnabled
+end)
+
+local fovLabel = Instance.new("TextLabel", content)
+fovLabel.Size = UDim2.new(0,60,0,28)
+fovLabel.Position = UDim2.new(0,8,0,100)
+fovLabel.BackgroundTransparency = 1
+fovLabel.Font = Enum.Font.SourceSans
+fovLabel.TextSize = 18
+fovLabel.TextColor3 = Color3.fromRGB(230,230,230)
+fovLabel.Text = "FOV"
+fovLabel.TextXAlignment = Enum.TextXAlignment.Left
+fovLabel.Visible = false
+
+local fovInput = Instance.new("TextBox", content)
+fovInput.Size = UDim2.new(0,120,0,28)
+fovInput.Position = UDim2.new(0,80,0,100)
+fovInput.BackgroundColor3 = Color3.fromRGB(45,45,45)
+fovInput.PlaceholderText = "1-1000"
+fovInput.TextColor3 = Color3.fromRGB(240,240,240)
+fovInput.Font = Enum.Font.SourceSansBold
+fovInput.TextSize = 18
+fovInput.ClearTextOnFocus = false
+fovInput.TextXAlignment = Enum.TextXAlignment.Center
+fovInput.Visible = false
+
+-- Tab logic
+local function setTab(name)
+    catLabel.Text = name
+    for k,v in pairs(tabButtons) do
+        if k==name then
+            v.BackgroundColor3 = Color3.fromRGB(40,40,40)
+            v.TextColor3 = Color3.fromRGB(0,255,150)
+        else
+            v.BackgroundColor3 = Color3.fromRGB(30,30,30)
+            v.TextColor3 = Color3.fromRGB(200,200,200)
+        end
+    end
+    local g = (name=="GENERAL")
+    speedLabel.Visible = g
+    speedInput.Visible = g
+    local c = (name=="COMBAT")
+    aimbotLabel.Visible = c
+    aimbotToggle.Visible = c
+    aimbotMark.Visible = (aimbotEnabled and c)
+    fovLabel.Visible = c
+    fovInput.Visible = c
+end
+
+for name,btn in pairs(tabButtons) do
+    btn.MouseButton1Click:Connect(function() setTab(name) end)
+end
+setTab("GENERAL")
+
+-- drag toggleFrame
+do
+    local dragging = false
+    local dragStart = Vector2.new()
+    local startPos = Vector2.new()
+    toggleFrame.InputBegan:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = UIS:GetMouseLocation()
+            startPos = Vector2.new(toggleFrame.Position.X.Offset, toggleFrame.Position.Y.Offset)
+        end
+    end)
+    UIS.InputChanged:Connect(function(inp)
+        if dragging and inp.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = UIS:GetMouseLocation() - dragStart
+            toggleFrame.Position = UDim2.new(0, startPos.X + delta.X, 0, startPos.Y + delta.Y)
+        end
+    end)
+    UIS.InputEnded:Connect(function(inp)
+        if inp.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
+    end)
+end
+
+-- utility: find hit part (tries common names)
+local function getHitpart(character)
+    local names = {"HumanoidRootPart","UpperTorso","LowerTorso","Torso","HumanoidRootPart","Head"}
+    for _,n in ipairs(names) do
+        local p = character:FindFirstChild(n)
+        if p and p:IsA("BasePart") then return p end
+    end
+    -- fallback: first BasePart
+    for _,obj in ipairs(character:GetChildren()) do
+        if obj:IsA("BasePart") then return obj end
+    end
+    return nil
+end
+
+-- FOV display: try Drawing, else use UI frame
+local hasDrawing, drawingCircle = false, nil
+local fovGuiFrame = nil
+do
+    local ok, D = pcall(function() return Drawing end)
+    if ok and D then
+        hasDrawing = true
+        drawingCircle = Drawing.new("Circle")
+        drawingCircle.Visible = false
+        drawingCircle.Radius = 200
+        drawingCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+        drawingCircle.Color = Color3.fromRGB(0,255,150)
+        drawingCircle.Thickness = 2
+        drawingCircle.Filled = false
+    else
+        -- create UI fallback: centered, border-only frame that resizes
+        fovGuiFrame = Instance.new("Frame", screen)
+        fovGuiFrame.AnchorPoint = Vector2.new(0.5,0.5)
+        fovGuiFrame.Position = UDim2.new(0.5,0,0.5,0)
+        fovGuiFrame.BackgroundTransparency = 1
+        fovGuiFrame.Size = UDim2.fromOffset(200,200)
+        local stroke = Instance.new("UIStroke", fovGuiFrame)
+        stroke.Thickness = 2
+        stroke.Color = Color3.fromRGB(0,255,150)
+        local corner = Instance.new("UICorner", fovGuiFrame)
+        corner.CornerRadius = UDim.new(1,0) -- circle-like
+        fovGuiFrame.Visible = false
+    end
+end
+
+-- find closest enemy by screen-distance from screen center
+local function getClosestEnemyByCenter(fov)
+    local cam = Camera
+    local center = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y/2)
+    local closest, minDist = nil, math.huge
+    for _, pl in pairs(Players:GetPlayers()) do
+        if pl ~= LocalPlayer and pl.Character and pl.Character.Parent and pl.Character:FindFirstChildOfClass("Humanoid") and pl.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+            local hitpart = getHitpart(pl.Character)
+            if hitpart then
+                local screenPos, onScreen = cam:WorldToViewportPoint(hitpart.Position)
+                if onScreen then
+                    local screenVec = Vector2.new(screenPos.X, screenPos.Y)
+                    local dist = (screenVec - center).Magnitude
+                    if dist <= fov and dist < minDist then
+                        minDist = dist
+                        closest = pl
+                    end
+                end
+            end
+        end
+    end
+    return closest
+end
+
+-- main loop
+RunService.RenderStepped:Connect(function()
+    -- Speed hack
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local hum = LocalPlayer.Character:FindFirstChild("Humanoid")
+        local n = tonumber(speedInput.Text)
+        if n then n = math.clamp(n,1,3.5) end
+        if n then
+            hum.WalkSpeed = 16 * n
+        else
+            hum.WalkSpeed = 16
+        end
+    end
+
+    -- Aimbot + FOV center display
+    if aimbotEnabled then
+        local raw = tonumber(fovInput.Text) or 300
+        local fov = math.clamp(raw, 1, 1000)
+
+        -- update drawing/UI
+        if hasDrawing and drawingCircle then
+            drawingCircle.Visible = true
+            drawingCircle.Radius = fov
+            drawingCircle.Position = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+        elseif fovGuiFrame then
+            fovGuiFrame.Visible = true
+            -- Size is diameter: convert pixels
+            local size = math.max(2, math.floor(fov * 2))
+            fovGuiFrame.Size = UDim2.fromOffset(size, size)
+            fovGuiFrame.Position = UDim2.new(0.5,0,0.5,0)
+        end
+
+        local target = getClosestEnemyByCenter(fov)
+        if target and target.Character and target.Character.Parent then
+            local hitpart = getHitpart(target.Character)
+            if hitpart then
+                -- instant aim (center camera onto hitpart)
+                local camPos = Camera.CFrame.Position
+                Camera.CFrame = CFrame.new(camPos, hitpart.Position)
+            end
+        end
+    else
+        if hasDrawing and drawingCircle then drawingCircle.Visible = false end
+        if fovGuiFrame then fovGuiFrame.Visible = false end
+    end
+end)
+
+-- cleanup on unload
+screen.DescendantRemoving:Connect(function()
+    if hasDrawing and drawingCircle then
+        pcall(function() drawingCircle.Visible = false drawingCircle:Remove() end)
+    end
+end)
+
+-- restore defaults on respawn
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local hum = char:WaitForChild("Humanoid")
+    hum.WalkSpeed = 16
+end)
