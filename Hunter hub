@@ -1,0 +1,467 @@
+-- LocalScript: Hunter Shop Full (FOV circle + homing to head)
+-- วางเป็น LocalScript ใน StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local Debris = game:GetService("Debris")
+local Workspace = game:GetService("Workspace")
+local UIS = game:GetService("UserInputService")
+local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+local PlayerGui = player:WaitForChild("PlayerGui")
+local Camera = workspace.CurrentCamera
+
+-- ===== Config / State =====
+local GUI_VISIBLE = true
+local AIMBOT_ENABLED = false
+local WALLPEN_ENABLED = false
+local ESP_ENABLED = false
+local FOV_VALUE = 300 -- interpreted as pixels (screen radius)
+
+local WeaponConfig = {
+    ["Pistol"] = {
+        damage = 25,
+        bulletSpeed = 1000,
+        bulletSize = Vector3.new(0.4,0.4,0.4),
+        fireRate = 0.3,
+        homing = true,
+        turnRate = 1,
+        maxTargetRange = 1000
+    }
+}
+
+-- ===== Helper: createToggle (UI) =====
+local function createToggle(parent, yPos, text, callback)
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(0,100,0,25)
+    label.Position = UDim2.new(0,10,0,yPos)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.Font = Enum.Font.SourceSansBold
+    label.TextScaled = true
+    label.TextColor3 = Color3.fromRGB(0,0,0)
+    label.Parent = parent
+
+    local toggle = Instance.new("TextButton")
+    toggle.Size = UDim2.new(0,50,0,25)
+    toggle.Position = UDim2.new(0,120,0,yPos)
+    toggle.Text = "OFF"
+    toggle.TextScaled = true
+    toggle.BackgroundColor3 = Color3.fromRGB(200,0,0)
+    toggle.TextColor3 = Color3.fromRGB(255,255,255)
+    toggle.Font = Enum.Font.SourceSansBold
+    toggle.Parent = parent
+
+    local state = false
+    toggle.MouseButton1Click:Connect(function()
+        state = not state
+        toggle.Text = state and "ON" or "OFF"
+        toggle.BackgroundColor3 = state and Color3.fromRGB(0,200,0) or Color3.fromRGB(200,0,0)
+        callback(state)
+    end)
+    return toggle
+end
+
+-- ===== Build GUI =====
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "HunterShopGUI"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = PlayerGui
+
+-- Main Frame (center)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0,300,0,300)
+mainFrame.Position = UDim2.new(0.5,-150,0.5,-150)
+mainFrame.AnchorPoint = Vector2.new(0.5,0.5)
+mainFrame.BackgroundColor3 = Color3.fromRGB(255,255,255)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+-- Simple drag for mainFrame
+do
+    local dragging = false
+    local dragStart, startPos
+    mainFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
+            startPos = mainFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragStart and startPos then
+            local mx, my = UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y
+            local delta = Vector2.new(mx, my) - dragStart
+            mainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1,0,0,30)
+titleLabel.Position = UDim2.new(0,0,0,0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Hunter Shop"
+titleLabel.TextColor3 = Color3.fromRGB(0,0,0)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextScaled = true
+titleLabel.Parent = mainFrame
+
+-- toggles and inputs
+local aimbotToggle = createToggle(mainFrame, 40, "Aimbot", function(state) AIMBOT_ENABLED = state end)
+local wallToggle = createToggle(mainFrame, 80, "ยิงทะลุ", function(state) WALLPEN_ENABLED = state end)
+
+local fovLabel = Instance.new("TextLabel")
+fovLabel.Size = UDim2.new(0,40,0,25)
+fovLabel.Position = UDim2.new(0,10,0,120)
+fovLabel.BackgroundTransparency = 1
+fovLabel.Text = "FOV"
+fovLabel.Font = Enum.Font.SourceSansBold
+fovLabel.TextScaled = true
+fovLabel.TextColor3 = Color3.fromRGB(0,0,0)
+fovLabel.Parent = mainFrame
+
+local fovBox = Instance.new("TextBox")
+fovBox.Size = UDim2.new(0,80,0,25)
+fovBox.Position = UDim2.new(0,60,0,120)
+fovBox.Text = tostring(FOV_VALUE)
+fovBox.TextScaled = true
+fovBox.Font = Enum.Font.SourceSansBold
+fovBox.TextColor3 = Color3.fromRGB(0,0,0)
+fovBox.BackgroundColor3 = Color3.fromRGB(200,200,200)
+fovBox.ClearTextOnFocus = false
+fovBox.Parent = mainFrame
+
+local espToggle = createToggle(mainFrame, 160, "ESP", function(state) ESP_ENABLED = state end)
+
+-- ===== FOV Circle UI (center screen) =====
+local fovCircle = Instance.new("Frame")
+fovCircle.Name = "FOVCircle"
+fovCircle.AnchorPoint = Vector2.new(0.5,0.5)
+fovCircle.Position = UDim2.new(0.5,0,0.5,0) -- center of screen
+fovCircle.BackgroundTransparency = 1
+fovCircle.BorderSizePixel = 0
+fovCircle.Parent = screenGui
+
+local fovOutline = Instance.new("Frame")
+fovOutline.Size = UDim2.new(1,0,1,0)
+fovOutline.Position = UDim2.new(0,0,0,0)
+fovOutline.BackgroundTransparency = 1
+fovOutline.Parent = fovCircle
+
+local fovStroke = Instance.new("UIStroke")
+fovStroke.Thickness = 2
+fovStroke.Color = Color3.new(1,1,1)
+fovStroke.Parent = fovOutline
+
+local fovCorner = Instance.new("UICorner")
+fovCorner.CornerRadius = UDim.new(1,0) -- make it circular
+fovCorner.Parent = fovOutline
+
+local function updateFOVCircle()
+    local val = tonumber(fovBox.Text)
+    val = math.clamp(val or FOV_VALUE, 1, 1000)
+    FOV_VALUE = val
+    -- set size in pixels: use scale 0 and offset val*2 (diameter)
+    fovCircle.Size = UDim2.new(0, val*2, 0, val*2)
+    fovOutline.Size = UDim2.new(1,0,1,0)
+end
+updateFOVCircle()
+fovBox.FocusLost:Connect(function(enter)
+    updateFOVCircle()
+end)
+
+-- ===== Toggle Button (Image, draggable) =====
+local toggleGUIFrame = Instance.new("Frame")
+toggleGUIFrame.Size = UDim2.new(0,80,0,80)
+toggleGUIFrame.Position = UDim2.new(0,50,0,50)
+toggleGUIFrame.BackgroundColor3 = Color3.fromRGB(50,50,50)
+toggleGUIFrame.BorderSizePixel = 0
+toggleGUIFrame.AnchorPoint = Vector2.new(0.5,0.5)
+toggleGUIFrame.Active = true
+toggleGUIFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0,12)
+corner.Parent = toggleGUIFrame
+
+local toggleButton = Instance.new("ImageButton")
+toggleButton.Size = UDim2.new(1,0,1,0)
+toggleButton.Position = UDim2.new(0,0,0,0)
+toggleButton.Image = "rbxassetid://106812531912589"
+toggleButton.BackgroundTransparency = 1
+toggleButton.Parent = toggleGUIFrame
+
+-- drag for toggleGUIFrame
+do
+    local dragging = false
+    local dragStart, startPos
+    toggleGUIFrame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = Vector2.new(input.Position.X, input.Position.Y)
+            startPos = toggleGUIFrame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+    RunService.RenderStepped:Connect(function()
+        if dragging and dragStart and startPos then
+            local mx, my = UIS:GetMouseLocation().X, UIS:GetMouseLocation().Y
+            local delta = Vector2.new(mx, my) - dragStart
+            toggleGUIFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+toggleButton.MouseButton1Click:Connect(function()
+    GUI_VISIBLE = not GUI_VISIBLE
+    mainFrame.Visible = GUI_VISIBLE
+    fovCircle.Visible = GUI_VISIBLE -- hide/show FOV circle together
+end)
+
+-- ===== Core shooting helpers =====
+local function getFOV()
+    local val = tonumber(fovBox.Text)
+    if val then return math.clamp(val,1,1000) end
+    return FOV_VALUE
+end
+
+local function tryApplyDamage(hitPart, dmg)
+    if not hitPart then return false end
+    local model = hitPart:FindFirstAncestorOfClass("Model")
+    if model and model ~= player.Character then
+        local humanoid = model:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid:TakeDamage(dmg)
+            return true
+        end
+    end
+    return false
+end
+
+local function raycastStep(origin, direction, damage)
+    local rp = RaycastParams.new()
+    rp.FilterType = Enum.RaycastFilterType.Blacklist
+    rp.FilterDescendantsInstances = {player.Character}
+    local step = direction.Unit * 100
+    local result = Workspace:Raycast(origin, step, rp)
+    if result then
+        tryApplyDamage(result.Instance, damage)
+        if WALLPEN_ENABLED then
+            return origin + step
+        else
+            return nil
+        end
+    else
+        return origin + step
+    end
+end
+
+local function createVisualBullet(size, pos)
+    local b = Instance.new("Part")
+    b.Shape = Enum.PartType.Ball
+    b.Size = size or Vector3.new(0.4,0.4,0.4)
+    b.Material = Enum.Material.Neon
+    b.Color = Color3.fromRGB(255,80,80)
+    b.Anchored = true
+    b.CanCollide = false
+    b.CFrame = CFrame.new(pos)
+    b.Parent = Workspace
+    return b
+end
+
+-- select nearest player whose head screen pos is within FOV circle (pixels)
+local function getNearestPlayerInFOV_byScreen(origin)
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    local fovRadius = getFOV()
+    local nearest, nearestDist = nil, math.huge
+    for _, other in pairs(Players:GetPlayers()) do
+        if other ~= player and other.Character and other.Character:FindFirstChild("Head") then
+            local head = other.Character.Head
+            local screenPos, onScreen = Camera:WorldToViewportPoint(head.Position)
+            if onScreen then
+                local screenVec = Vector2.new(screenPos.X, screenPos.Y)
+                local dist = (screenVec - center).Magnitude
+                if dist <= fovRadius and dist < nearestDist then
+                    nearestDist = dist
+                    nearest = other.Character.Head
+                end
+            end
+        end
+    end
+    return nearest
+end
+
+-- spawn homing projectile that aims for head if available
+local function spawnHomingProjectile(cfg, origin)
+    local speed = cfg.bulletSpeed or 1000
+    local damage = cfg.damage or 10
+    local bullet = createVisualBullet(cfg.bulletSize or Vector3.new(0.4,0.4,0.4), origin)
+    local prevPos = origin
+    local alive = true
+    local conn
+    conn = RunService.Heartbeat:Connect(function(dt)
+        if not alive then conn:Disconnect() return end
+        local targetHead = nil
+        if AIMBOT_ENABLED then
+            targetHead = getNearestPlayerInFOV_byScreen(origin)
+        end
+        local curPos = bullet.Position
+        local desiredDir
+        if targetHead and targetHead.Parent then
+            desiredDir = (targetHead.Position - curPos).Unit
+        else
+            desiredDir = (mouse.Hit.Position - curPos).Unit
+        end
+        local currentDir = (curPos - prevPos).Magnitude > 0.001 and (curPos - prevPos).Unit or desiredDir
+        local newDir = currentDir:Lerp(desiredDir, math.clamp(cfg.turnRate or 1,0,1)).Unit
+        local nextPos = raycastStep(curPos, newDir * speed * dt, damage)
+        if nextPos then
+            bullet.CFrame = CFrame.new(nextPos, nextPos + newDir)
+            prevPos = curPos
+        else
+            alive = false
+            bullet:Destroy()
+        end
+        if (bullet.Position - origin).Magnitude > 5000 then
+            alive = false
+            bullet:Destroy()
+        end
+    end)
+    Debris:AddItem(bullet, 6)
+end
+
+-- shooting connect
+local lastFire = 0
+local function shootWeapon()
+    local cfg = WeaponConfig["Pistol"]
+    if tick() - lastFire < (cfg.fireRate or 0.2) then return end
+    lastFire = tick()
+    if not player.Character or not player.Character:FindFirstChild("Head") then return end
+    spawnHomingProjectile(cfg, player.Character.Head.Position)
+end
+mouse.Button1Down:Connect(shootWeapon)
+
+-- ===== ESP & Aim Line setup =====
+local playerBoxes = {} -- map Player -> Frame
+local function createPlayerBox(plr)
+    if playerBoxes[plr] then return end
+    local box = Instance.new("Frame")
+    box.Size = UDim2.new(0,50,0,100)
+    box.AnchorPoint = Vector2.new(0,0)
+    box.BackgroundTransparency = 1
+    box.BorderSizePixel = 2
+    box.BorderColor3 = Color3.new(1,1,1)
+    box.Parent = screenGui
+    playerBoxes[plr] = box
+end
+
+for _, p in pairs(Players:GetPlayers()) do
+    if p ~= player then createPlayerBox(p) end
+end
+
+Players.PlayerAdded:Connect(function(plr) if plr ~= player then createPlayerBox(plr) end end)
+Players.PlayerRemoving:Connect(function(plr) if playerBoxes[plr] then playerBoxes[plr]:Destroy(); playerBoxes[plr]=nil end end)
+
+-- aim line (UI)
+local aimLine = Instance.new("Frame")
+aimLine.Size = UDim2.new(0,2,0,0)
+aimLine.Position = UDim2.new(0,0,0,0)
+aimLine.AnchorPoint = Vector2.new(0.5,0)
+aimLine.BackgroundColor3 = Color3.new(1,1,1)
+aimLine.BorderSizePixel = 0
+aimLine.Parent = screenGui
+aimLine.Visible = false
+
+-- RenderStepped loop: update ESP boxes and aim line, and FOV circle visibility
+RunService.RenderStepped:Connect(function()
+    local mousePos = Vector2.new(mouse.X, mouse.Y)
+    local center = Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)
+    local nearest, nearestDist = nil, math.huge
+    local fovRadius = getFOV()
+
+    -- update FOV circle position & size (in case resolution changes)
+    fovCircle.Position = UDim2.new(0.5,0,0.5,0)
+    fovCircle.Size = UDim2.new(0, fovRadius*2, 0, fovRadius*2)
+
+    -- update boxes for each player
+    for plr, box in pairs(playerBoxes) do
+        local char = plr.Character
+        if char and char:FindFirstChild("Head") and char:FindFirstChild("HumanoidRootPart") then
+            local headPos, onScreenHead = Camera:WorldToViewportPoint(char.Head.Position)
+            local rootPos, onScreenRoot = Camera:WorldToViewportPoint(char.HumanoidRootPart.Position)
+            if ESP_ENABLED and onScreenHead and onScreenRoot then
+                local height = math.abs(headPos.Y - rootPos.Y)
+                height = math.max(30, height)
+                local width = math.clamp(height * 0.45, 20, 200)
+                box.Size = UDim2.new(0, math.floor(width), 0, math.floor(height))
+                box.Position = UDim2.new(0, headPos.X - width/2, 0, headPos.Y - 10)
+                box.Visible = true
+            else
+                box.Visible = false
+            end
+
+            if onScreenHead then
+                local screenVec = Vector2.new(headPos.X, headPos.Y)
+                local distToCenter = (screenVec - center).Magnitude
+                if distToCenter <= fovRadius then
+                    -- inside FOV circle - consider for aimbot
+                    local distMouse = (screenVec - mousePos).Magnitude
+                    if distMouse < nearestDist then
+                        nearestDist = distMouse
+                        nearest = plr
+                    end
+                end
+            end
+        else
+            box.Visible = false
+        end
+    end
+
+    -- update aimLine: point from screen center to nearest player's head (within FOV)
+    if nearest and ESP_ENABLED then
+        local nchar = nearest.Character
+        if nchar and nchar:FindFirstChild("Head") then
+            local headPos, onScreen = Camera:WorldToViewportPoint(nchar.Head.Position)
+            if onScreen then
+                local centerScreen = center
+                local targetPos = Vector2.new(headPos.X, headPos.Y)
+                local delta = targetPos - centerScreen
+                aimLine.Visible = true
+                aimLine.Size = UDim2.new(0, 2, 0, math.max(4, delta.Magnitude))
+                aimLine.Position = UDim2.new(0, centerScreen.X, 0, centerScreen.Y)
+                aimLine.Rotation = math.deg(math.atan2(delta.Y, delta.X)) + 90
+
+                -- change box border color: red for targeted, white for others
+                for plr, box in pairs(playerBoxes) do
+                    if plr == nearest then
+                        box.BorderColor3 = Color3.new(1,0,0)
+                    else
+                        box.BorderColor3 = Color3.new(1,1,1)
+                    end
+                end
+            else
+                aimLine.Visible = false
+            end
+        else
+            aimLine.Visible = false
+        end
+    else
+        aimLine.Visible = false
+        for _, box in pairs(playerBoxes) do
+            box.BorderColor3 = Color3.new(1,1,1)
+        end
+    end
+end)
+
+-- ensure initial visibility states
+mainFrame.Visible = GUI_VISIBLE
+fovCircle.Visible = GUI_VISIBLE
+
+-- End of script
